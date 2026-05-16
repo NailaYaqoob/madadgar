@@ -43,8 +43,8 @@ class Orchestrator:
             return state
             
         # 2. Location Extraction
-        # Skip location/discovery/ranking if cancelling
-        if state.get("intent_action") != "cancel":
+        # Skip location/discovery/ranking if cancelling or selecting a provider
+        if state.get("intent_action") != "cancel" and not state.get("selected_provider_id"):
             state.update(await location_agent_node(state))
             if state.get("requires_clarification"):
                 logger.reasoning("Halting workflow. Clarification needed on Location.")
@@ -58,9 +58,28 @@ class Orchestrator:
                 
             # 4. Ranking
             state.update(await ranking_agent_node(state))
+        elif state.get("selected_provider_id"):
+            logger.reasoning(f"Provider {state.get('selected_provider_id')} already selected. Skipping discovery.")
         else:
             logger.reasoning("Skipping location and discovery nodes for cancellation workflow.")
             
+        # --- SELECTION PHASE ---
+        if state.get("intent_action") != "cancel" and not state.get("selected_provider_id"):
+            logger.reasoning("No provider selected yet. Presenting options to user.")
+            ranked = state.get("ranked_providers", [])
+            
+            options_text = "I found these top-rated professionals for you:\n\n"
+            for i, p in enumerate(ranked[:3]):
+                options_text += f"{i+1}. {p['name']} - Rating: {p['rating']} ({p['distance_km']} km away)\n"
+            
+            options_text += "\nWhich one would you like to book? (e.g., 'Book the first one')"
+            
+            return {
+                **state,
+                "requires_clarification": True,
+                "clarification_message": options_text
+            }
+        
         # 5. Booking (Handles both book and cancel actions)
         state.update(await booking_agent_node(state))
         

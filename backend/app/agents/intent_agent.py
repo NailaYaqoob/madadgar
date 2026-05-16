@@ -48,8 +48,17 @@ async def intent_agent_node(state: AgentState) -> dict:
     logger = AgentLogger(state["correlation_id"], "IntentAgent", state["telemetry"])
     logger.reasoning("Analyzing user message for intent.", {"raw_input": state["original_message"]})
     
+    msg = state["original_message"].lower()
+    selected_id = None
+    # Always check for simple selection keywords (reliable fallback)
+    if "first" in msg or "pahla" in msg or "number 1" in msg:
+        selected_id = "provider_1"
+    elif "second" in msg or "doosra" in msg or "number 2" in msg:
+        selected_id = "provider_2"
+    elif "third" in msg or "teesra" in msg or "number 3" in msg:
+        selected_id = "provider_3"
+
     if settings.USE_MOCK_DATA or not client:
-        msg = state["original_message"].lower()
         category = None
         action = "book"
 
@@ -67,13 +76,14 @@ async def intent_agent_node(state: AgentState) -> dict:
             logger.reasoning("(Mock) Detected cancellation request.")
             return {
                 "intent_action": "cancel",
-                "intent_service_category": category, # May be None
+                "intent_service_category": category,
                 "intent_datetime_target": None,
                 "intent_urgency": "normal",
-                "intent_constraints": []
+                "intent_constraints": [],
+                "selected_provider_id": selected_id
             }
 
-        if not category:
+        if not category and not selected_id:
             logger.reasoning("(Mock) Could not determine service category. Requesting clarification.")
             return {
                 "requires_clarification": True,
@@ -92,14 +102,17 @@ async def intent_agent_node(state: AgentState) -> dict:
             "intent_service_category": category,
             "intent_datetime_target": parsed_dt,
             "intent_urgency": urgency,
-            "intent_constraints": []
+            "intent_constraints": [],
+            "selected_provider_id": selected_id
         }
 
     # Real LLM Call
     prompt = f"""
     You are an Intent Parser for a Pakistani service app. 
+    Return your response as a JSON object.
     Extract the following from the message:
     - action (book, cancel) - Default is 'book'. If the user wants to stop/cancel, use 'cancel'.
+    - selected_provider_id (e.g. 'provider_123' if mentioned, otherwise null)
     - service_category (e.g. Plumber, Electrician, AC Technician)
     - datetime_target (ISO timestamp, if mentioned like 'kal subah')
     - urgency (high, normal)
@@ -122,8 +135,12 @@ async def intent_agent_node(state: AgentState) -> dict:
         data = json.loads(response.choices[0].message.content)
         svc = data.get("service_category")
         action = data.get("action", "book")
+        llm_selected_id = data.get("selected_provider_id")
         
-        logger.reasoning(f"Extracted action '{action}', category '{svc}'.", {"parsed_data": data})
+        # Use LLM selection if keyword didn't find anything
+        final_selected_id = selected_id if selected_id else llm_selected_id
+        
+        logger.reasoning(f"Extracted action '{action}', category '{svc}', selection '{final_selected_id}'.", {"parsed_data": data})
         logger.state_transition("Intent extracted successfully", {"service_category": svc, "action": action})
         
         return {
@@ -132,8 +149,9 @@ async def intent_agent_node(state: AgentState) -> dict:
             "intent_datetime_target": data.get("datetime_target"),
             "intent_urgency": data.get("urgency", "normal"),
             "intent_constraints": data.get("constraints", []),
-            "requires_clarification": not bool(svc) if action == "book" else False,
-            "clarification_message": "I'm not sure what kind of service you need. Could you please specify if you need a plumber, electrician, or AC technician?" if (not svc and action == "book") else None
+            "selected_provider_id": final_selected_id,
+            "requires_clarification": not bool(svc) if action == "book" and not final_selected_id else False,
+            "clarification_message": "I'm not sure what kind of service you need. Could you please specify if you need a plumber, electrician, or AC technician?" if (not svc and action == "book" and not final_selected_id) else None
         }
     except Exception as e:
         logger._log("error", f"Intent Agent Error: {str(e)}", level=40)

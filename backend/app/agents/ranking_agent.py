@@ -40,18 +40,13 @@ async def ranking_agent_node(state: AgentState) -> dict:
         )
 
     ranked = sorted(candidates, key=lambda x: x["score"], reverse=True)
-    top_pick = ranked[0]
 
-    logger.reasoning(
-        f"Selected '{top_pick['name']}' (score {top_pick['score']}, {top_pick['distance_km']} km away)."
-    )
     logger.state_transition("Providers ranked successfully", {
-        "top_pick_id": top_pick["id"],
-        "top_pick_distance_km": top_pick["distance_km"],
-        "top_pick_score": top_pick["score"]
+        "count": len(ranked),
+        "top_score": ranked[0]["score"] if ranked else 0
     })
 
     return {
         "ranked_providers": ranked,
-        "selected_provider_id": top_pick["id"]
+        "selected_provider_id": None # Selection moved to Orchestrator/Intent
     }
