@@ -8,6 +8,17 @@ async def booking_agent_node(state: AgentState) -> dict:
     """
     logger = AgentLogger(state["correlation_id"], "BookingAgent", state["telemetry"])
     provider_id = state.get("selected_provider_id")
+    action = state.get("intent_action", "book")
+
+    if action == "cancel":
+        logger.reasoning("Processing cancellation request...")
+        # Simulating DB update to cancel booking
+        logger.tool_execution("mutate_db_cancel_booking", duration_ms=80, status="success")
+        logger.booking_lifecycle("Booking cancelled successfully.", {"status": "cancelled"})
+        return {
+            "booking_status": "cancelled",
+            "final_response": "Your service request has been cancelled as requested. Hope to help you again soon!"
+        }
     
     if not provider_id:
         logger._log("error", "No provider selected for booking.", level=40)

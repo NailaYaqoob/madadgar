@@ -20,6 +20,7 @@ class AgentState(TypedDict):
     clarification_message: Optional[str]
     
     # Extracted data
+    intent_action: Optional[str] # e.g. "book", "cancel"
     intent_service_category: Optional[str]
     intent_datetime_target: Optional[str]
     intent_urgency: Optional[str]

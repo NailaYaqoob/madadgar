@@ -43,21 +43,25 @@ class Orchestrator:
             return state
             
         # 2. Location Extraction
-        state.update(await location_agent_node(state))
-        if state.get("requires_clarification"):
-            logger.reasoning("Halting workflow. Clarification needed on Location.")
-            return state
+        # Skip location/discovery/ranking if cancelling
+        if state.get("intent_action") != "cancel":
+            state.update(await location_agent_node(state))
+            if state.get("requires_clarification"):
+                logger.reasoning("Halting workflow. Clarification needed on Location.")
+                return state
+                
+            # 3. Discovery
+            state.update(await discovery_agent_node(state))
+            if not state.get("discovered_providers"):
+                logger.reasoning("Halting workflow. No providers found.")
+                return state
+                
+            # 4. Ranking
+            state.update(await ranking_agent_node(state))
+        else:
+            logger.reasoning("Skipping location and discovery nodes for cancellation workflow.")
             
-        # 3. Discovery
-        state.update(await discovery_agent_node(state))
-        if not state.get("discovered_providers"):
-            logger.reasoning("Halting workflow. No providers found.")
-            return state
-            
-        # 4. Ranking
-        state.update(await ranking_agent_node(state))
-        
-        # 5. Booking
+        # 5. Booking (Handles both book and cancel actions)
         state.update(await booking_agent_node(state))
         
         # 6. Notification

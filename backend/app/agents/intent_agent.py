@@ -51,13 +51,27 @@ async def intent_agent_node(state: AgentState) -> dict:
     if settings.USE_MOCK_DATA or not client:
         msg = state["original_message"].lower()
         category = None
+        action = "book"
 
+        if any(w in msg for w in ["cancel", "no", "abort", "khata", "nhi", "nahin"]):
+            action = "cancel"
+        
         if "plumber" in msg or "nal" in msg or "pipe" in msg:
             category = "Plumber"
         elif "elect" in msg or "bijli" in msg or "fan" in msg:
             category = "Electrician"
         elif "ac" in msg or "thanda" in msg or "technician" in msg:
             category = "AC Technician"
+
+        if action == "cancel":
+            logger.reasoning("(Mock) Detected cancellation request.")
+            return {
+                "intent_action": "cancel",
+                "intent_service_category": category, # May be None
+                "intent_datetime_target": None,
+                "intent_urgency": "normal",
+                "intent_constraints": []
+            }
 
         if not category:
             logger.reasoning("(Mock) Could not determine service category. Requesting clarification.")
@@ -67,13 +81,14 @@ async def intent_agent_node(state: AgentState) -> dict:
             }
 
         logger.reasoning(f"(Mock) Detected {category} requirement based on keywords.")
-        logger.state_transition(f"Intent extracted successfully (Mock)", {"service_category": category})
+        logger.state_transition(f"Intent extracted successfully (Mock)", {"service_category": category, "action": action})
 
         urgency = "high" if any(w in msg for w in ["urgent", "abhi", "jaldi", "asap", "emergency"]) else "normal"
         parsed_dt = _parse_datetime(msg)
         logger.reasoning(f"(Mock) Parsed datetime '{parsed_dt}', urgency '{urgency}'.")
 
         return {
+            "intent_action": action,
             "intent_service_category": category,
             "intent_datetime_target": parsed_dt,
             "intent_urgency": urgency,
@@ -84,11 +99,12 @@ async def intent_agent_node(state: AgentState) -> dict:
     prompt = f"""
     You are an Intent Parser for a Pakistani service app. 
     Extract the following from the message:
+    - action (book, cancel) - Default is 'book'. If the user wants to stop/cancel, use 'cancel'.
     - service_category (e.g. Plumber, Electrician, AC Technician)
     - datetime_target (ISO timestamp, if mentioned like 'kal subah')
     - urgency (high, normal)
     - constraints (list of strings)
-    If you cannot figure out the service category, return {{"service_category": null}}.
+    If you cannot figure out the service category and action is 'book', return {{"service_category": null}}.
     
     User Message: {state['original_message']}
     """
@@ -105,17 +121,19 @@ async def intent_agent_node(state: AgentState) -> dict:
         
         data = json.loads(response.choices[0].message.content)
         svc = data.get("service_category")
+        action = data.get("action", "book")
         
-        logger.reasoning(f"Extracted category '{svc}'.", {"parsed_data": data})
-        logger.state_transition("Intent extracted successfully", {"service_category": svc})
+        logger.reasoning(f"Extracted action '{action}', category '{svc}'.", {"parsed_data": data})
+        logger.state_transition("Intent extracted successfully", {"service_category": svc, "action": action})
         
         return {
+            "intent_action": action,
             "intent_service_category": svc,
             "intent_datetime_target": data.get("datetime_target"),
             "intent_urgency": data.get("urgency", "normal"),
             "intent_constraints": data.get("constraints", []),
-            "requires_clarification": not bool(svc),
-            "clarification_message": "I'm not sure what kind of service you need. Could you please specify if you need a plumber, electrician, or AC technician?" if not svc else None
+            "requires_clarification": not bool(svc) if action == "book" else False,
+            "clarification_message": "I'm not sure what kind of service you need. Could you please specify if you need a plumber, electrician, or AC technician?" if (not svc and action == "book") else None
         }
     except Exception as e:
         logger._log("error", f"Intent Agent Error: {str(e)}", level=40)
