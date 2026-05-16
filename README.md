@@ -12,7 +12,7 @@ Built specifically for the **AI Service Orchestrator Challenge**, Madadgar demon
 ## 📽️ Submission Assets
 
 - **Mobile App Link**: [Download/Link Placeholder]
-- **Github Repository**: [URL Placeholder]
+- **Github Repository**: [https://github.com/NailaYaqoob/madadgar](https://github.com/NailaYaqoob/madadgar)
 - **Solution Demo Video**: [YouTube/Loom Link Placeholder]
 - **Antigravity Usage Video**: [YouTube/Loom Link Placeholder]
 - **Trace Logs**: Included in the `/submissions/logs` directory.
