@@ -12,7 +12,8 @@ CONVERSATION_IDS = [
     "7e13470d-0d13-498d-93ae-852f69af3018", # Testing
     "c6920a2e-9dc9-46d9-96ea-660f23dd1351", # Documenting
     "64aa33cd-7dd6-4548-b78f-89a3f003ad95", # Debugging
-    "a8d2f40f-f8a9-4871-b646-43729de264b0", # Submission prep (current)
+    "a8d2f40f-f8a9-4871-b646-43729de264b0", # Submission prep
+    "a59e9509-05a8-4c8c-904d-2bf1a420c14c", # UI/UX Design Spec & Prompts (current)
 ]
 
 def collect_logs():
