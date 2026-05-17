@@ -88,6 +88,20 @@ async def intent_agent_node(state: AgentState) -> dict:
             }
 
         if not category and not selected_id:
+            # Scan conversation history before asking for clarification
+            for prev in reversed(state.get("messages", [])):
+                prev_text = prev.get("content", "").lower()
+                if "plumber" in prev_text or "nal" in prev_text or "pipe" in prev_text:
+                    category = "Plumber"
+                elif "elect" in prev_text or "bijli" in prev_text or "fan" in prev_text:
+                    category = "Electrician"
+                elif "ac" in prev_text or "thanda" in prev_text or "technician" in prev_text:
+                    category = "AC Technician"
+                if category:
+                    logger.reasoning(f"(Mock) Found service category '{category}' from conversation history.")
+                    break
+
+        if not category and not selected_id:
             logger.reasoning("(Mock) Could not determine service category. Requesting clarification.")
             return {
                 "requires_clarification": True,

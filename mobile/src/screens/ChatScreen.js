@@ -17,13 +17,19 @@ export const ChatScreen = ({ userId }) => {
   const handleSend = async () => {
     if (!inputText.trim()) return;
 
+    // Snapshot history before adding the new message — messages closure is pre-update
+    const history = messages.map(m => ({
+      role: m.isUser ? 'user' : 'assistant',
+      content: m.text,
+    }));
+
     const userMessage = { id: String(++msgCounter.current), text: inputText, isUser: true };
     setMessages(prev => [...prev, userMessage]);
     setInputText('');
     setLoading(true);
 
     try {
-      const response = await ChatService.sendRequest(userId, userMessage.text);
+      const response = await ChatService.sendRequest(userId, userMessage.text, history);
 
       const systemMessage = {
         id: String(++msgCounter.current),

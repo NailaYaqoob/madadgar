@@ -30,13 +30,19 @@ _LOCAL_COORDS: dict[str, tuple[float, float]] = {
 
 # Regex to pull Islamabad sector / known area names from free text
 _AREA_RE = re.compile(
-    r'\b([A-I]-\d{1,2}(?:/\d)?'          # e.g. G-13, F-7/2
+    r'\b([A-I]-\d{1,2}(?:/\d)?'          # G-13, F-7/2  (with hyphen)
+    r'|[A-I]\d{1,2}(?:/\d)?'             # G13, F7      (no hyphen)
     r'|DHA\s+Phase\s+\d'                  # DHA Phase 2
     r'|Blue\s+Area|Bahria\s+Town'
     r'|PWD|Bani\s+Gala|Gulberg|Rawalpindi'
     r'|Saddar|Peshawar\s+Road)\b',
     re.IGNORECASE,
 )
+
+def _normalise_area(area: str) -> str:
+    """Convert G13 → G-13 so the local dict lookup always hits."""
+    import re as _re
+    return _re.sub(r'^([A-I])(\d)', r'\1-\2', area, flags=_re.IGNORECASE)
 
 def _extract_area(message: str) -> str:
     match = _AREA_RE.search(message)
@@ -63,11 +69,22 @@ async def location_agent_node(state: AgentState) -> dict:
     area = _extract_area(state["original_message"])
 
     if not area:
-        logger.reasoning("No recognisable area found in message. Requesting clarification.")
+        # Scan conversation history before asking for clarification
+        for prev in reversed(state.get("messages", [])):
+            if prev.get("role") == "user":
+                area = _extract_area(prev.get("content", ""))
+                if area:
+                    logger.reasoning(f"Found location '{area}' from conversation history.")
+                    break
+
+    if not area:
+        logger.reasoning("No recognisable area found in message or history. Requesting clarification.")
         return {
             "requires_clarification": True,
             "clarification_message": "I couldn't detect your location. Please mention your area in Islamabad (e.g. G-13, F-7, DHA Phase 2).",
         }
+
+    area = _normalise_area(area)
 
     # Fast path: check local dict before making a network call
     local_key = area.lower().strip()

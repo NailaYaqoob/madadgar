@@ -10,7 +10,7 @@ async def process_chat_request(http_request: Request, request: ChatRequest):
     correlation_id = getattr(http_request.state, "correlation_id", None)
     
     # Run the Antigravity graph
-    final_state = await orchestrator.process_request(request.user_id, request.message, correlation_id)
+    final_state = await orchestrator.process_request(request.user_id, request.message, correlation_id, request.history)
     
     status = "completed"
     if final_state.get("requires_clarification"):

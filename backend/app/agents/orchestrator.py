@@ -17,7 +17,7 @@ class Orchestrator:
     def __init__(self):
         pass
 
-    async def process_request(self, user_id: str, text: str, correlation_id: str = None) -> dict:
+    async def process_request(self, user_id: str, text: str, correlation_id: str = None, history: list = None) -> dict:
         if not correlation_id:
             correlation_id = str(uuid.uuid4())
             
@@ -26,7 +26,7 @@ class Orchestrator:
             "user_id": user_id,
             "original_message": text,
             "correlation_id": correlation_id,
-            "messages": [{"role": "user", "content": text}],
+            "messages": [*(history or []), {"role": "user", "content": text}],
             "telemetry": [],
             "current_agent": "Supervisor",
             "next_agent": "IntentAgent",

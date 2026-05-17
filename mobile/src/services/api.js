@@ -12,11 +12,12 @@ const apiClient = axios.create({
 });
 
 export const ChatService = {
-  sendRequest: async (userId, message) => {
+  sendRequest: async (userId, message, history = []) => {
     try {
       const response = await apiClient.post('/chat/request', {
         user_id: userId,
         message: message,
+        history,
       });
       return response.data;
     } catch (error) {
