@@ -51,7 +51,7 @@ export const ReasoningTrace = ({ traceId, status, trace = [], booking }) => {
         <View style={styles.traceList}>
           <Text style={styles.traceCountLabel}>{trace.length} reasoning steps</Text>
           {trace.map((entry, i) => (
-            <TraceStep key={i} entry={entry} index={i} />
+            <TraceStep key={`${entry.agent}-${entry.type}-${i}`} entry={entry} index={i} />
           ))}
         </View>
       )}
@@ -71,8 +71,10 @@ const TraceStep = ({ entry }) => {
       activeOpacity={entry.metadata ? 0.7 : 1}
     >
       <View style={styles.stepHeader}>
-        <Text style={[styles.stepAgent, { color }]}>{icon} {entry.agent}</Text>
-        <Text style={styles.stepType}>{entry.type}</Text>
+        <View style={styles.stepHeaderLeft}>
+          <Text style={[styles.stepAgent, { color }]}>{icon} {entry.agent}</Text>
+          <Text style={styles.stepType}>{entry.type}</Text>
+        </View>
         {entry.duration_ms !== undefined && (
           <Text style={styles.stepDuration}>{entry.duration_ms}ms</Text>
         )}
@@ -92,19 +94,18 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: theme.colors.border,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: theme.spacing.sm,
-    backgroundColor: '#1A1A2E',
+    backgroundColor: theme.colors.surfaceDeep,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
     flexWrap: 'wrap',
     flex: 1,
   },
@@ -112,6 +113,7 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontWeight: 'bold',
     fontSize: 13,
+    marginRight: 8,
   },
   badge: {
     borderRadius: 10,
@@ -120,7 +122,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: '#000',
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: '800',
   },
   chevron: {
@@ -130,17 +132,17 @@ const styles = StyleSheet.create({
   bookingBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0D2137',
+    backgroundColor: theme.colors.bookingBar,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   bookingLabel: {
     color: theme.colors.textSecondary,
-    fontSize: 11,
+    fontSize: 12,
   },
   bookingId: {
     color: theme.colors.success,
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'monospace',
     fontWeight: '700',
   },
@@ -149,7 +151,7 @@ const styles = StyleSheet.create({
   },
   traceCountLabel: {
     color: theme.colors.textSecondary,
-    fontSize: 10,
+    fontSize: 12,
     marginBottom: 6,
     textAlign: 'right',
   },
@@ -163,39 +165,44 @@ const styles = StyleSheet.create({
   stepHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 3,
+  },
+  stepHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 6,
+    flex: 1,
   },
   stepAgent: {
     fontWeight: '700',
-    fontSize: 11,
+    fontSize: 13,
+    marginRight: 6,
   },
   stepType: {
     color: theme.colors.textSecondary,
-    fontSize: 9,
+    fontSize: 12,
     textTransform: 'uppercase',
-    backgroundColor: '#3D3D3D',
+    backgroundColor: theme.colors.tagBg,
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 4,
   },
   stepDuration: {
-    color: '#777',
-    fontSize: 9,
-    marginLeft: 'auto',
+    color: theme.colors.textDim,
+    fontSize: 12,
   },
   stepMessage: {
     color: theme.colors.textPrimary,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 18,
   },
   stepMeta: {
     marginTop: 5,
-    color: '#AAA',
-    fontSize: 10,
+    color: theme.colors.textMuted,
+    fontSize: 12,
     fontFamily: 'monospace',
-    backgroundColor: '#1A1A1A',
+    backgroundColor: theme.colors.traceMeta,
     padding: 6,
     borderRadius: 4,
   },

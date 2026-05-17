@@ -1,6 +1,5 @@
 import logging
 from pythonjsonlogger import jsonlogger
-import asyncio
 import datetime
 
 def setup_json_logging():
@@ -34,7 +33,6 @@ class AgentLogger:
             **kwargs
         }
         self.logger.log(level, message, extra=extra)
-        asyncio.create_task(self._async_db_write(extra))
 
         if self.telemetry is not None:
             entry = {
@@ -48,10 +46,6 @@ class AgentLogger:
             if "execution_duration_ms" in kwargs:
                 entry["duration_ms"] = kwargs["execution_duration_ms"]
             self.telemetry.append(entry)
-
-    async def _async_db_write(self, log_data: dict):
-        # Here we would use asyncpg or SQLAlchemy async sessions to write to the `agent_logs` table
-        pass
 
     def reasoning(self, message: str, context: dict = None):
         self._log("reasoning", message, metadata=context)

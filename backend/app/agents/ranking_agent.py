@@ -2,6 +2,8 @@ import math
 from app.agents.state import AgentState
 from app.utils.logger import AgentLogger
 
+MAX_RATING = 5.0
+
 def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     R = 6371.0
     dlat = math.radians(lat2 - lat1)
@@ -31,7 +33,7 @@ async def ranking_agent_node(state: AgentState) -> dict:
         dist_km = _haversine_km(user_lat, user_lng, c["latitude"], c["longitude"])
         c["distance_km"] = round(dist_km, 2)
         proximity_score = max(0.0, 40.0 * (1 - dist_km / radius_km))
-        rating_score = (c["rating"] / 5.0) * 40.0
+        rating_score = (c["rating"] / MAX_RATING) * 40.0
         availability_score = 20.0 if c["is_available"] else 0.0
         c["score"] = round(proximity_score + rating_score + availability_score, 1)
         logger.reasoning(

@@ -11,7 +11,13 @@ export const theme = {
     userBubble: '#004B57', // Darker Cyan for user
     border: '#333333',
     success: '#00E676',
-    error: '#FF1744'
+    error: '#FF1744',
+    surfaceDeep: '#1A1A2E',
+    bookingBar: '#0D2137',
+    traceMeta: '#1A1A1A',
+    textDim: '#777777',
+    textMuted: '#AAAAAA',
+    tagBg: '#3D3D3D',
   },
   spacing: {
     xs: 4,

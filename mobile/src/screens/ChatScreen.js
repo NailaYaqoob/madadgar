@@ -1,31 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { ChatMessage } from '../components/ChatMessage';
 import { ReasoningTrace } from '../components/ReasoningTrace';
 import { ChatService } from '../services/api';
 import { theme } from '../styles/theme';
 
-export const ChatScreen = () => {
+export const ChatScreen = ({ userId }) => {
   const [messages, setMessages] = useState([
     { id: '1', text: 'Hello! I am your Madadgar AI Assistant. I can help you book plumbers, electricians, or AC technicians in Pakistan. What do you need today?', isUser: false }
   ]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
+  const flatListRef = useRef(null);
+  const msgCounter = useRef(1);
 
   const handleSend = async () => {
     if (!inputText.trim()) return;
 
-    const userMessage = { id: Date.now().toString(), text: inputText, isUser: true };
+    const userMessage = { id: String(++msgCounter.current), text: inputText, isUser: true };
     setMessages(prev => [...prev, userMessage]);
     setInputText('');
     setLoading(true);
 
     try {
-      // Hardcoded user ID for testing
-      const response = await ChatService.sendRequest("test_user_mobile", userMessage.text);
-      
+      const response = await ChatService.sendRequest(userId, userMessage.text);
+
       const systemMessage = {
-        id: (Date.now() + 1).toString(),
+        id: String(++msgCounter.current),
         text: response.message,
         isUser: false,
         traceId: response.trace_id,
@@ -37,7 +38,7 @@ export const ChatScreen = () => {
       setMessages(prev => [...prev, systemMessage]);
     } catch (error) {
       const errorMessage = {
-        id: (Date.now() + 1).toString(),
+        id: String(++msgCounter.current),
         text: "Sorry, I'm having trouble connecting to the backend. Please check if the server is running.",
         isUser: false,
         status: 'failed'
@@ -48,7 +49,7 @@ export const ChatScreen = () => {
     }
   };
 
-  const renderItem = ({ item }) => (
+  const renderItem = useCallback(({ item }) => (
     <View>
       <ChatMessage message={item.text} isUser={item.isUser} />
       {item.traceId && (
@@ -60,22 +61,25 @@ export const ChatScreen = () => {
         />
       )}
     </View>
-  );
+  ), []);
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Madadgar AI Orchestrator</Text>
       </View>
       
       <FlatList
+        ref={flatListRef}
         data={messages}
         keyExtractor={item => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.messageList}
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
       />
       
       {loading && (
@@ -92,6 +96,9 @@ export const ChatScreen = () => {
           onChangeText={setInputText}
           placeholder="I need a plumber at G-13 tomorrow..."
           placeholderTextColor={theme.colors.textSecondary}
+          returnKeyType="send"
+          onSubmitEditing={handleSend}
+          submitBehavior="submit"
         />
         <TouchableOpacity style={styles.sendButton} onPress={handleSend} disabled={loading}>
           <Text style={styles.sendButtonText}>Send</Text>

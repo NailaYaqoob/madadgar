@@ -1,12 +1,11 @@
 import axios from 'axios';
-import { Platform } from 'react-native';
+import { API_BASE_URL } from '../config';
 
-// For Android Emulator, localhost is 10.0.2.2. For physical device, it must be your machine's local IP.
-// Update this to your local Wi-Fi IP address if testing on a physical phone with Expo Go.
-const BASE_URL = 'http://192.168.1.12:8000/api/v1';
+const BASE_URL = API_BASE_URL;
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },

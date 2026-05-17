@@ -1,10 +1,10 @@
-from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from pydantic import BaseModel, Field
+from typing import Optional
 from datetime import datetime
 
 class ChatRequest(BaseModel):
-    user_id: str
-    message: str
+    user_id: str = Field(min_length=1, max_length=64)
+    message: str = Field(min_length=1, max_length=1000)
 
 class IntentOutput(BaseModel):
     service_category: Optional[str] = None

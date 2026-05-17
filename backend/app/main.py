@@ -14,10 +14,9 @@ app = FastAPI(title=settings.PROJECT_NAME)
 # Add Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "X-Correlation-ID"],
 )
 app.add_middleware(CorrelationIdMiddleware)
 

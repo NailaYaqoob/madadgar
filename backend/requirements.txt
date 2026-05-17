@@ -6,5 +6,5 @@ python-dotenv
 sqlalchemy
 psycopg2-binary
 openai
-googlemaps
+httpx
 python-json-logger

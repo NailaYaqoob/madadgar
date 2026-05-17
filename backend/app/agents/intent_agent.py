@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 import datetime
 from openai import AsyncOpenAI
@@ -39,6 +40,9 @@ def _parse_datetime(msg: str) -> str:
 
 # Setup client only if key exists to prevent crash on boot
 client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "your-openai-key-here" else None
+
+if client is None:
+    logging.getLogger(__name__).warning("OPENAI_API_KEY not set — IntentAgent running in keyword-fallback mode.")
 
 async def intent_agent_node(state: AgentState) -> dict:
     """
@@ -155,4 +159,7 @@ async def intent_agent_node(state: AgentState) -> dict:
         }
     except Exception as e:
         logger._log("error", f"Intent Agent Error: {str(e)}", level=40)
-        return {"requires_clarification": True}
+        return {
+            "requires_clarification": True,
+            "clarification_message": "Sorry, I had trouble understanding that. Could you rephrase your request?",
+        }
