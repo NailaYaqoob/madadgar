@@ -2,10 +2,41 @@ import json
 import logging
 import time
 import datetime
+import difflib
 from openai import AsyncOpenAI
 from app.core.config import settings
 from app.agents.state import AgentState
 from app.utils.logger import AgentLogger
+
+_PLUMBER_KW = [
+    "plumber", "plumbr", "plumer", "plumbar", "plumbing", "plumbir", "plmber",
+    "nal", "pipe", "paip", "water", "pani", "leakage", "leak", "nalka", "tap",
+]
+_ELECTRICIAN_KW = [
+    "electrician", "electician", "electrition", "electrcian", "electrican",
+    "electric", "electri", "bijli", "bijlee", "bijly", "fan", "switch",
+    "wiring", "light", "bulb", "socket", "fuse",
+]
+_AC_KW = [
+    "ac", "a.c", "a/c", "aircon", "aircondition", "air condition",
+    "air conditioning", "thanda", "cooler", "hvac", "ai",
+    "ac technician", "ac tech", "aac", "ac mechanic",
+]
+
+def _fuzzy_category(msg: str):
+    """Returns (category, confidence) or (None, 0) via fuzzy word matching."""
+    words = msg.lower().split()
+    best_cat, best_score = None, 0.0
+
+    for word in words:
+        for kw_list, cat in [(_PLUMBER_KW, "Plumber"), (_ELECTRICIAN_KW, "Electrician"), (_AC_KW, "AC Technician")]:
+            matches = difflib.get_close_matches(word, kw_list, n=1, cutoff=0.72)
+            if matches:
+                score = difflib.SequenceMatcher(None, word, matches[0]).ratio()
+                if score > best_score:
+                    best_score, best_cat = score, cat
+
+    return best_cat
 
 def _parse_datetime(msg: str) -> str:
     """
@@ -69,12 +100,14 @@ async def intent_agent_node(state: AgentState) -> dict:
         if any(w in msg for w in ["cancel", "no", "abort", "khata", "nhi", "nahin"]):
             action = "cancel"
         
-        if "plumber" in msg or "nal" in msg or "pipe" in msg:
+        if any(w in msg for w in _PLUMBER_KW):
             category = "Plumber"
-        elif "elect" in msg or "bijli" in msg or "fan" in msg:
+        elif any(w in msg for w in _ELECTRICIAN_KW):
             category = "Electrician"
-        elif "ac" in msg or "thanda" in msg or "technician" in msg:
+        elif any(w in msg for w in _AC_KW):
             category = "AC Technician"
+        else:
+            category = _fuzzy_category(msg)
 
         if action == "cancel":
             logger.reasoning("(Mock) Detected cancellation request.")
@@ -91,12 +124,14 @@ async def intent_agent_node(state: AgentState) -> dict:
             # Scan conversation history before asking for clarification
             for prev in reversed(state.get("messages", [])):
                 prev_text = prev.get("content", "").lower()
-                if "plumber" in prev_text or "nal" in prev_text or "pipe" in prev_text:
+                if any(w in prev_text for w in _PLUMBER_KW):
                     category = "Plumber"
-                elif "elect" in prev_text or "bijli" in prev_text or "fan" in prev_text:
+                elif any(w in prev_text for w in _ELECTRICIAN_KW):
                     category = "Electrician"
-                elif "ac" in prev_text or "thanda" in prev_text or "technician" in prev_text:
+                elif any(w in prev_text for w in _AC_KW):
                     category = "AC Technician"
+                else:
+                    category = _fuzzy_category(prev_text)
                 if category:
                     logger.reasoning(f"(Mock) Found service category '{category}' from conversation history.")
                     break
