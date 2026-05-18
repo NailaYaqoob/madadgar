@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.chat import router as chat_router
@@ -26,6 +27,18 @@ def read_root():
         "message": "Welcome to Madadgar API", 
         "mock_data_enabled": settings.USE_MOCK_DATA
     }
+
+@app.get("/download-zip")
+def download_zip():
+    import os
+    file_path = "/app/antigravity_orchestration_and_logs.zip"
+    if os.path.exists(file_path):
+        return FileResponse(
+            file_path,
+            media_type="application/zip",
+            filename="antigravity_orchestration_and_logs.zip"
+        )
+    return {"error": f"File not found at {file_path}"}
 
 app.include_router(chat_router, prefix="/api/v1/chat", tags=["Chat"])
 app.include_router(providers_router, prefix="/api/v1/providers", tags=["Providers"])

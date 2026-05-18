@@ -12,7 +12,7 @@ const now = () =>
   new Date().toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' });
 
 // ─── Animated typing dots ──────────────────────────────────────────────────
-const TypingDots = () => {
+const TypingDots = React.memo(function TypingDots() {
   const anims = useRef([
     new Animated.Value(0),
     new Animated.Value(0),
@@ -53,7 +53,7 @@ const TypingDots = () => {
       </View>
     </View>
   );
-};
+});
 
 const dotStyles = StyleSheet.create({
   row: {
@@ -173,7 +173,7 @@ export const ChatScreen = ({ userId }) => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -193,9 +193,11 @@ export const ChatScreen = ({ userId }) => {
         data={messages}
         keyExtractor={item => item.id}
         renderItem={renderItem}
+        style={styles.listContainer}
         contentContainerStyle={styles.messageList}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
+        maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+        removeClippedSubviews={false}
       />
 
       {loading && <TypingDots />}
@@ -276,6 +278,9 @@ const styles = StyleSheet.create({
   },
 
   // ── Messages ──────────────────────────────────────────────────────────
+  listContainer: {
+    flex: 1,
+  },
   messageList: {
     paddingVertical: 12,
   },
