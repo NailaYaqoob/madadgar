@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PhoneScreen } from './src/screens/PhoneScreen';
 import { OtpScreen } from './src/screens/OtpScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
@@ -42,7 +43,7 @@ export default function App() {
   if (stage === 'loading') return null;
 
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="light" />
       {stage === 'phone' && (
         <PhoneScreen onOtpSent={handleOtpSent} />
@@ -57,6 +58,6 @@ export default function App() {
       {stage === 'chat' && (
         <ChatScreen userId={userId} />
       )}
-    </>
+    </SafeAreaProvider>
   );
 }

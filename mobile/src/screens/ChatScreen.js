@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   StyleSheet, KeyboardAvoidingView, Platform, Animated,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChatMessage } from '../components/ChatMessage';
 import { ReasoningTrace } from '../components/ReasoningTrace';
 import { ChatService } from '../services/api';
@@ -91,6 +92,7 @@ const dotStyles = StyleSheet.create({
 
 // ─── Main screen ──────────────────────────────────────────────────────────
 export const ChatScreen = ({ userId }) => {
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState([
     {
       id: '1',
@@ -173,10 +175,10 @@ export const ChatScreen = ({ userId }) => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <View style={styles.headerAvatarWrap}>
           <Text style={styles.headerAvatarEmoji}>🤖</Text>
           <View style={styles.onlineDot} />
@@ -203,13 +205,13 @@ export const ChatScreen = ({ userId }) => {
       {loading && <TypingDots />}
 
       {/* Input bar */}
-      <View style={styles.inputBar}>
+      <View style={[styles.inputBar, { paddingBottom: insets.bottom + 10 }]}>
         <TextInput
           style={styles.input}
           value={inputText}
           onChangeText={setInputText}
           placeholder="Ask for a plumber, electrician…"
-          placeholderTextColor={theme.colors.textDim}
+          placeholderTextColor={theme.colors.textSecondary}
           returnKeyType="send"
           onSubmitEditing={handleSend}
           submitBehavior="submit"
@@ -237,7 +239,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 56 : 36,
     paddingBottom: 14,
     paddingHorizontal: 16,
     backgroundColor: theme.colors.surface,
@@ -290,8 +291,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+    paddingTop: 10,
     backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
