@@ -7,6 +7,7 @@ env.bak/
 venv.bak/
 madadgar_judges_package/
 logs/
+submissions/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
