@@ -1,2 +1,2 @@
-// For production/standalone use live Railway backend by default; can be overridden via EXPO_PUBLIC_API_URL.
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://madadgar-production.up.railway.app/api/v1';
+// Production backend on Google Cloud Run — overridable via EXPO_PUBLIC_API_URL.
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://madadgar-backend-120966766782.asia-south1.run.app/api/v1';
