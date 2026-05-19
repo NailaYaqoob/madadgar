@@ -9,6 +9,9 @@
     },
     "preview": {
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://madadgar-backend-120966766782.asia-south1.run.app/api/v1"
+      },
       "android": {
         "buildType": "apk"
       }
