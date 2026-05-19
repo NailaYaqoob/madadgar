@@ -1,7 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
+
+const RobotIcon = ({ size, color }) => {
+  if (Platform.OS === 'web') {
+    return <Text style={{ fontSize: size - 2, lineHeight: size }}>🤖</Text>;
+  }
+  return <Ionicons name="robot-outline" size={size} color={color} />;
+};
 
 export const ChatMessage = ({ message, isUser, createdAt, status }) => {
   const isFailed = status === 'failed';
@@ -10,7 +16,7 @@ export const ChatMessage = ({ message, isUser, createdAt, status }) => {
     <View style={[styles.wrapper, isUser ? styles.wrapperUser : styles.wrapperSystem]}>
       {!isUser && (
         <View style={styles.avatar}>
-          <Ionicons name="robot-outline" size={18} color={theme.colors.primary} />
+          <RobotIcon size={18} color={theme.colors.primary} />
         </View>
       )}
 
