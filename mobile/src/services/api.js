@@ -3,7 +3,7 @@ import { API_BASE_URL } from '../config';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 20000,
+  timeout: 35000,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -174,7 +174,18 @@ export const ChatService = {
       return response.data;
     } catch (error) {
       console.warn('Backend unavailable, using offline AI:', error.message);
-      return _fallbackResponse(message, history);
+      try {
+        return _fallbackResponse(message, history);
+      } catch (fallbackError) {
+        console.error('Offline fallback failed:', fallbackError.message);
+        return {
+          message: "Hello! I'm Madadgar AI. Tell me which service you need — plumber, electrician, AC technician, tutor, cleaner, or beautician.",
+          status: 'completed',
+          trace_id: 'error',
+          trace: [],
+          booking: null,
+        };
+      }
     }
   },
 };
