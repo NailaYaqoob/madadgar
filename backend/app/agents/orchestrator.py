@@ -51,9 +51,12 @@ class Orchestrator:
         }
 
         logger = AgentLogger(correlation_id, "Supervisor", state["telemetry"])
-        
+
+        # Keyword-based ordinal IDs from intent agent ("book the first one" → provider_1)
+        _ORDINAL_IDS = {"provider_1": 0, "provider_2": 1, "provider_3": 2}
+
         logger.state_transition("Initialized new request workflow.")
-        
+
         # 1 & 2. Intent + Location run in parallel — both only read original_message
         intent_result, location_result = await asyncio.gather(
             intent_agent_node(state),
@@ -65,21 +68,35 @@ class Orchestrator:
             logger.reasoning("Halting workflow. Clarification needed on Intent.")
             return state
 
-        # Apply location only for book flows that haven't selected a provider yet
-        if state.get("intent_action") != "cancel" and not state.get("selected_provider_id"):
+        is_ordinal_selection = state.get("selected_provider_id") in _ORDINAL_IDS
+
+        # Run discovery+ranking for book flows with no provider, or ordinal selections
+        # (ordinal IDs like "provider_1" need the ranked list to resolve a real provider)
+        if state.get("intent_action") != "cancel" and (not state.get("selected_provider_id") or is_ordinal_selection):
             state.update(location_result)
             if state.get("requires_clarification"):
                 logger.reasoning("Halting workflow. Clarification needed on Location.")
                 return state
-                
+
             # 3. Discovery
             state.update(await discovery_agent_node(state))
             if not state.get("discovered_providers"):
                 logger.reasoning("Halting workflow. No providers found.")
                 return state
-                
+
             # 4. Ranking
             state.update(await ranking_agent_node(state))
+
+            # Resolve ordinal ID to the actual provider from the ranked list
+            if is_ordinal_selection:
+                idx = _ORDINAL_IDS[state["selected_provider_id"]]
+                ranked = state.get("ranked_providers", [])
+                if idx < len(ranked):
+                    state["selected_provider_id"] = ranked[idx]["id"]
+                    logger.reasoning(f"Ordinal 'provider_{idx+1}' resolved to '{state['selected_provider_id']}'.")
+                else:
+                    state["selected_provider_id"] = None
+                    logger.reasoning(f"Ordinal index {idx} out of range ({len(ranked)} providers). Presenting options.")
         elif state.get("selected_provider_id"):
             logger.reasoning(f"Provider {state.get('selected_provider_id')} already selected. Skipping discovery.")
         else:

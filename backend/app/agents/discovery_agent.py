@@ -115,9 +115,12 @@ async def discovery_agent_node(state: AgentState) -> dict:
     lat = state.get("location_lat")
     lng = state.get("location_lng")
 
-    logger.reasoning(
-        f"Searching for '{service_category}' providers within {radius}km of [{lat:.4f}, {lng:.4f}]."
-    )
+    if lat is not None and lng is not None:
+        logger.reasoning(
+            f"Searching for '{service_category}' providers within {radius}km of [{lat:.4f}, {lng:.4f}]."
+        )
+    else:
+        logger.reasoning(f"Searching for '{service_category}' providers (no location coordinates available).")
 
     discovered = []
     source = "mock"
