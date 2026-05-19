@@ -8,9 +8,12 @@ PLACES_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
 
 # Maps service categories to Google Places keyword searches
 _KEYWORD_MAP = {
-    "AC Technician": "AC repair air conditioning service technician",
-    "Plumber":       "plumber plumbing pipe repair",
-    "Electrician":   "electrician electrical repair wiring",
+    "AC Technician": "AC repair air conditioning service technician HVAC",
+    "Plumber":       "plumber plumbing pipe repair water leakage",
+    "Electrician":   "electrician electrical repair wiring electrician shop",
+    "Tutor":         "home tutor tuition center coaching academic teacher",
+    "Beautician":    "beautician parlor makeup artist salon home service beauty",
+    "Home Cleaner":  "home cleaning service maid janitorial deep cleaning",
 }
 
 # Fallback mock data — used when Google Places returns no results or key is absent
@@ -27,6 +30,12 @@ MOCK_PROVIDERS = {
     "Electrician": [
         {"id": "mock_el_1", "name": "Zubair Bijli Wala",   "service_type": "Electrician", "latitude": 33.6500, "longitude": 72.9850, "rating": 4.2, "is_available": True},
         {"id": "mock_el_2", "name": "Power Link Electrics", "service_type": "Electrician", "latitude": 33.6450, "longitude": 72.9750, "rating": 4.6, "is_available": True},
+    ],
+    "Tutor": [
+        {"id": "mock_tu_1", "name": "Asma's Home Tuition", "service_type": "Tutor", "latitude": 33.6510, "longitude": 72.9830, "rating": 4.9, "is_available": True},
+    ],
+    "Beautician": [
+        {"id": "mock_be_1", "name": "Zara Makeup Artist",  "service_type": "Beautician", "latitude": 33.6470, "longitude": 72.9880, "rating": 4.4, "is_available": True},
     ],
 }
 

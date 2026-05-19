@@ -22,14 +22,26 @@ _AC_KW = [
     "air conditioning", "thanda", "cooler", "hvac", "ai",
     "ac technician", "ac tech", "aac", "ac mechanic",
 ]
+_TUTOR_KW = ["tutor", "tuition", "teacher", "sir", "madam", "ustad", "parhai", "study", "academy"]
+_BEAUTICIAN_KW = ["beautician", "parlor", "makeup", "artist", "beauty", "salon", "makeup artist", "dulhan"]
+_CLEANER_KW = ["cleaner", "cleaning", "safai", "maid", "kam wali", "deep cleaning", "janitor"]
 
 def _fuzzy_category(msg: str):
     """Returns (category, confidence) or (None, 0) via fuzzy word matching."""
     words = msg.lower().split()
     best_cat, best_score = None, 0.0
 
+    categories = [
+        (_PLUMBER_KW, "Plumber"),
+        (_ELECTRICIAN_KW, "Electrician"),
+        (_AC_KW, "AC Technician"),
+        (_TUTOR_KW, "Tutor"),
+        (_BEAUTICIAN_KW, "Beautician"),
+        (_CLEANER_KW, "Home Cleaner"),
+    ]
+
     for word in words:
-        for kw_list, cat in [(_PLUMBER_KW, "Plumber"), (_ELECTRICIAN_KW, "Electrician"), (_AC_KW, "AC Technician")]:
+        for kw_list, cat in categories:
             matches = difflib.get_close_matches(word, kw_list, n=1, cutoff=0.72)
             if matches:
                 score = difflib.SequenceMatcher(None, word, matches[0]).ratio()
@@ -106,6 +118,12 @@ async def intent_agent_node(state: AgentState) -> dict:
             category = "Electrician"
         elif any(w in msg for w in _AC_KW):
             category = "AC Technician"
+        elif any(w in msg for w in _TUTOR_KW):
+            category = "Tutor"
+        elif any(w in msg for w in _BEAUTICIAN_KW):
+            category = "Beautician"
+        elif any(w in msg for w in _CLEANER_KW):
+            category = "Home Cleaner"
         else:
             category = _fuzzy_category(msg)
 
@@ -130,6 +148,12 @@ async def intent_agent_node(state: AgentState) -> dict:
                     category = "Electrician"
                 elif any(w in prev_text for w in _AC_KW):
                     category = "AC Technician"
+                elif any(w in prev_text for w in _TUTOR_KW):
+                    category = "Tutor"
+                elif any(w in prev_text for w in _BEAUTICIAN_KW):
+                    category = "Beautician"
+                elif any(w in prev_text for w in _CLEANER_KW):
+                    category = "Home Cleaner"
                 else:
                     category = _fuzzy_category(prev_text)
                 if category:
@@ -140,7 +164,7 @@ async def intent_agent_node(state: AgentState) -> dict:
             logger.reasoning("(Mock) Could not determine service category. Requesting clarification.")
             return {
                 "requires_clarification": True,
-                "clarification_message": "I'm not sure what service you need. Could you specify if you need a plumber, electrician, or AC technician?"
+                "clarification_message": "I'm not sure what service you need. Could you specify if you need a plumber, electrician, AC technician, tutor, or beautician?"
             }
 
         logger.reasoning(f"(Mock) Detected {category} requirement based on keywords.")
@@ -204,7 +228,7 @@ async def intent_agent_node(state: AgentState) -> dict:
             "intent_constraints": data.get("constraints", []),
             "selected_provider_id": final_selected_id,
             "requires_clarification": not bool(svc) if action == "book" and not final_selected_id else False,
-            "clarification_message": "I'm not sure what kind of service you need. Could you please specify if you need a plumber, electrician, or AC technician?" if (not svc and action == "book" and not final_selected_id) else None
+            "clarification_message": "I'm not sure what kind of service you need. Could you please specify if you need a plumber, electrician, AC technician, tutor, or beautician?" if (not svc and action == "book" and not final_selected_id) else None
         }
     except Exception as e:
         logger._log("error", f"Intent Agent Error: {str(e)}", level=40)

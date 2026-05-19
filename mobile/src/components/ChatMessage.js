@@ -1,4 +1,6 @@
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 
 export const ChatMessage = ({ message, isUser, createdAt, status }) => {
@@ -8,7 +10,7 @@ export const ChatMessage = ({ message, isUser, createdAt, status }) => {
     <View style={[styles.wrapper, isUser ? styles.wrapperUser : styles.wrapperSystem]}>
       {!isUser && (
         <View style={styles.avatar}>
-          <Text style={styles.avatarEmoji}>🤖</Text>
+          <Ionicons name="robot-outline" size={18} color={theme.colors.primary} />
         </View>
       )}
 
@@ -17,12 +19,20 @@ export const ChatMessage = ({ message, isUser, createdAt, status }) => {
           styles.bubble,
           isUser ? styles.userBubble : styles.systemBubble,
           isFailed && styles.failedBubble,
+          isUser ? styles.userTail : styles.systemTail,
         ]}>
-          <Text style={[styles.text, isFailed && styles.failedText]}>{message}</Text>
+          <Text style={[styles.text, isUser ? styles.userText : styles.systemText, isFailed && styles.failedText]}>
+            {message}
+          </Text>
         </View>
 
         {createdAt ? (
-          <Text style={[styles.time, isUser && styles.timeUser]}>{createdAt}</Text>
+          <View style={[styles.timeContainer, isUser && styles.timeContainerUser]}>
+            <Text style={styles.time}>{createdAt}</Text>
+            {isUser && status === 'completed' && (
+              <Ionicons name="checkmark-done" size={14} color={theme.colors.success} style={styles.checkIcon} />
+            )}
+          </View>
         ) : null}
       </View>
     </View>
@@ -33,8 +43,8 @@ const styles = StyleSheet.create({
   wrapper: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    marginVertical: 4,
-    paddingHorizontal: 12,
+    marginVertical: 6,
+    paddingHorizontal: 16,
   },
   wrapperUser: {
     justifyContent: 'flex-end',
@@ -48,19 +58,16 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: theme.colors.surfaceVariant,
-    borderWidth: 1,
-    borderColor: theme.colors.primary + '44',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
-    marginBottom: 16,
-  },
-  avatarEmoji: {
-    fontSize: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
 
   column: {
-    maxWidth: '75%',
+    maxWidth: '82%',
     alignItems: 'flex-start',
   },
   columnUser: {
@@ -68,9 +75,10 @@ const styles = StyleSheet.create({
   },
 
   bubble: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    ...theme.shadows.sm,
   },
   userBubble: {
     backgroundColor: theme.colors.userBubble,
@@ -82,28 +90,45 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
+  userTail: {
+    // Simulated tail via border radius
+  },
+  systemTail: {
+    // Simulated tail via border radius
+  },
   failedBubble: {
-    backgroundColor: theme.colors.error + '18',
-    borderColor: theme.colors.error + '55',
+    backgroundColor: theme.colors.error + '15',
+    borderColor: theme.colors.error + '40',
   },
 
   text: {
-    color: theme.colors.textPrimary,
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 22,
+  },
+  userText: {
+    color: '#FFFFFF',
+  },
+  systemText: {
+    color: theme.colors.textPrimary,
   },
   failedText: {
     color: theme.colors.error,
   },
 
+  timeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    marginHorizontal: 4,
+  },
+  timeContainerUser: {
+    justifyContent: 'flex-end',
+  },
   time: {
     fontSize: 11,
-    color: theme.colors.textDim,
-    marginTop: 3,
-    marginLeft: 4,
+    color: theme.colors.textMuted,
   },
-  timeUser: {
-    marginLeft: 0,
-    marginRight: 4,
+  checkIcon: {
+    marginLeft: 4,
   },
 });

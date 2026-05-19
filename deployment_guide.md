@@ -1,21 +1,31 @@
-# 🚀 Madadgar: Google Cloud VM Deployment Guide
+# 🚀 Madadgar: Google Cloud Deployment Guide
 
-This guide will walk you through deploying your **Madadgar FastAPI backend** and **PostgreSQL database** to Google Cloud Platform (GCP) using your Google Cloud Credits. 
+This guide details how to deploy the **Madadgar FastAPI backend** to Google Cloud Platform (GCP) using your Google Cloud Credits. Depending on your needs, you can choose between two deployment strategies:
 
-We will use a **Google Compute Engine (GCE) VM Instance** running Ubuntu, which allows you to run your existing `docker-compose.yml` file out of the box with **zero code modifications**.
+1. **Option A: Google Compute Engine (VM Instance)** — Best for hosting both the FastAPI backend and the PostgreSQL database together using `docker-compose`.
+2. **Option B: Google Cloud Run (Serverless)** — Best for lightweight, auto-scaling API hosting. Highly recommended for hackathon demos (running in mock data mode or connecting to an external cloud database like Supabase/Neon).
 
 ---
 
 ## 📋 Table of Contents
-1. [Step 1: Create a VM Instance on GCP](#step-1-create-a-vm-instance-on-gcp)
-2. [Step 2: Create a GCP Firewall Rule (Crucial)](#step-2-create-a-gcp-firewall-rule-crucial)
-3. [Step 3: Connect to your VM & Install Docker](#step-3-connect-to-your-vm--install-docker)
-4. [Step 4: Clone & Launch the App](#step-4-clone--launch-the-app)
-5. [Step 5: Connect your Mobile App (Expo)](#step-5-connect-your-mobile-app-expo)
+
+### [Option A: Google Compute Engine (VM + Docker Compose)](#option-a-google-compute-engine-vm-docker-compose)
+1. [Step A1: Create a VM Instance on GCP](#step-a1-create-a-vm-instance-on-gcp)
+2. [Step A2: Create a GCP Firewall Rule](#step-a2-create-a-gcp-firewall-rule)
+3. [Step A3: Connect to your VM & Install Docker](#step-a3-connect-to-your-vm--install-docker)
+4. [Step A4: Clone & Launch the App](#step-a4-clone--launch-the-app)
+
+### [Option B: Google Cloud Run (Serverless Container)](#option-b-google-cloud-run-serverless-container)
+1. [Cloud Run Key Considerations](#cloud-run-key-considerations)
+2. [Step B1: Enable Cloud Run APIs](#step-b1-enable-cloud-run-apis)
+3. [Step B2: Deploy backend with gcloud CLI](#step-b2-deploy-backend-with-gcloud-cli)
+4. [Step B3: Deploy backend via GCP Web Console](#step-b3-deploy-backend-via-gcp-web-console)
+
+### [Connecting your Mobile App (Expo)](#-connecting-your-mobile-app-expo)
 
 ---
 
-## 🖥️ Step 1: Create a VM Instance on GCP
+## 🖥️ Option A: Google Compute Engine (VM + Docker Compose)
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
 2. Select your project (where your credits are active).
@@ -34,7 +44,7 @@ We will use a **Google Compute Engine (GCE) VM Instance** running Ubuntu, which 
 
 ---
 
-## 🔒 Step 2: Create a GCP Firewall Rule (Crucial)
+### 🔒 Step A2: Create a GCP Firewall Rule
 
 By default, GCP blocks all incoming traffic to custom ports. Since your backend runs on port **8000**, you must open this port so your Expo mobile app can connect to it.
 
@@ -50,7 +60,7 @@ By default, GCP blocks all incoming traffic to custom ports. Since your backend 
 
 ---
 
-## 🔑 Step 3: Connect to your VM & Install Docker
+### 🔑 Step A3: Connect to your VM & Install Docker
 
 1. Back in the **VM Instances** screen, click the **SSH** button next to your `madadgar-backend` instance to open a terminal in your browser.
 2. Update your package manager:
@@ -75,7 +85,7 @@ By default, GCP blocks all incoming traffic to custom ports. Since your backend 
 
 ---
 
-## 🛠️ Step 4: Clone & Launch the App
+### 🛠️ Step A4: Clone & Launch the App
 
 Now inside your VM SSH terminal:
 
@@ -106,13 +116,109 @@ Now inside your VM SSH terminal:
 
 ---
 
-## 📱 Step 5: Connect your Mobile App (Expo)
+## ⚡ Option B: Google Cloud Run (Serverless Container)
 
-Now that your backend is running 24/7 on Google Cloud, you just need to point your mobile app to it.
+**Google Cloud Run** is a fully-managed serverless platform that automatically scales your containerized application up and down (to zero when there is no traffic). This is highly cost-effective and extremely easy to maintain.
+
+### Cloud Run Key Considerations
+
+1. **Database Connection (Statelessness)**:
+   * Cloud Run containers are **ephemeral** (temporary). You cannot run a local PostgreSQL database inside the same container.
+   * **For Hackathon/Demo (Quickest & Easiest)**: Run the backend in mock-data mode by setting `USE_MOCK_DATA=true`. No database setup is needed!
+   * **For Production**: Set up a **Google Cloud SQL (PostgreSQL)** instance or use a cloud database provider like **Supabase** or **Neon**. Pass the database URL via the `DATABASE_URL` environment variable.
+2. **Port Binding**:
+   * Cloud Run dynamically assigns a port (usually `8080`) via the `PORT` environment variable. 
+   * We have already updated the [Dockerfile](file:///e:/Madadgar/backend/Dockerfile) to dynamically read this environment variable:
+     ```dockerfile
+     CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+     ```
+
+---
+
+### 🛠️ Step B1: Enable Cloud Run APIs
+
+Before deploying, ensure you have enabled the required APIs in your GCP Console:
+1. Search for **Cloud Run API** in the GCP Console search bar and click **Enable**.
+2. Search for **Artifact Registry API** and click **Enable** (used to store your Docker container image).
+
+---
+
+### 💻 Step B2: Deploy backend with gcloud CLI
+
+This is the fastest method. It builds your container in the cloud using **Cloud Build** and deploys it to **Cloud Run** in a single command.
+
+1. Install the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) on your local development machine.
+2. Open your terminal in the `backend/` directory:
+   ```bash
+   cd backend
+   ```
+3. Authenticate with Google Cloud:
+   ```bash
+   gcloud auth login
+   ```
+4. Set your active GCP Project:
+   ```bash
+   gcloud config set project YOUR_PROJECT_ID
+   ```
+5. Deploy the backend:
+   ```bash
+   gcloud run deploy madadgar-backend \
+     --source . \
+     --region us-central1 \
+     --allow-unauthenticated \
+     --set-env-vars="USE_MOCK_DATA=true,OPENAI_API_KEY=your_openai_api_key_here,GOOGLE_MAPS_API_KEY=your_maps_key_here"
+   ```
+   *Note: If you have set up a Cloud SQL database, replace `USE_MOCK_DATA=true` with your database environment variables.*
+6. Once completed, the CLI will output a secure **Service URL** (e.g., `https://madadgar-backend-xyz-uc.a.run.app`).
+
+---
+
+### 🖥️ Step B3: Deploy backend via GCP Web Console
+
+If you prefer using the browser, follow these steps:
+
+1. **Create an Artifact Registry Repository**:
+   * Search for **Artifact Registry** in the GCP Console.
+   * Click **Create Repository**. Name it `madadgar-repo`, select format **Docker**, and choose your region (e.g. `us-central1`).
+2. **Build & Push your Container**:
+   You can build and push the container to your new registry using standard docker commands or Cloud Build:
+   ```bash
+   gcloud builds submit --tag us-central1-docker.pkg.dev/YOUR_PROJECT_ID/madadgar-repo/backend:latest ./backend
+   ```
+3. **Deploy on Cloud Run**:
+   * Navigate to **Cloud Run** in the GCP Console.
+   * Click **Create Service**.
+   * Select **Deploy one revision from an existing container image**. Click **Test/Select** and choose the image you just pushed.
+   * **Service Name**: `madadgar-backend`
+   * **Region**: `us-central1`
+   * **CPU Allocation**: Select *CPU is only allocated during request processing* (this scales to zero and costs $0 when idle).
+   * **Autoscaling**: Min instances: `0`, Max instances: `5` (to protect your budget/credits).
+   * **Ingress Control**: Select *Allow all traffic*.
+   * **Authentication**: Select *Allow unauthenticated invocations* (makes the API public for your mobile app).
+   * Expand **Container(s), Volumes, Cloud SQL, Connections, Environment Variables**:
+     * Under **Variables**, click **Add Variable**:
+       * `USE_MOCK_DATA` = `true`
+       * `OPENAI_API_KEY` = `your_openai_api_key`
+       * `GOOGLE_MAPS_API_KEY` = `your_maps_api_key`
+   * Click **Create** at the bottom.
+   * Wait ~1-2 minutes. The console will display your secure **Cloud Run URL**!
+
+---
+
+## 📱 Connecting your Mobile App (Expo)
+
+Now that your backend is running 24/7 on Google Cloud (either on a VM or Cloud Run), you just need to point your mobile app to it.
 
 1. In your local development machine, open **[config.js](file:///e:/Madadgar/mobile/src/config.js)**.
-2. Replace your local IP address with your new **GCP VM External IP** address:
-   ```javascript
-   export const API_BASE_URL = 'http://<YOUR_VM_EXTERNAL_IP>:8000/api/v1';
-   ```
-3. Run your Expo app locally (`npx expo start`) or build your APK (`eas build`). It will now communicate with your live cloud backend and database from anywhere in the world!
+2. Replace the `API_BASE_URL` with your GCP endpoint:
+
+   * **If using Option A (GCP VM)**:
+     ```javascript
+     export const API_BASE_URL = 'http://<YOUR_VM_EXTERNAL_IP>:8000/api/v1';
+     ```
+   * **If using Option B (Google Cloud Run)**:
+     ```javascript
+     export const API_BASE_URL = 'https://<YOUR_CLOUD_RUN_URL>/api/v1';
+     ```
+
+3. Run your Expo app locally (`npx expo start`) or build it. It will now seamlessly talk to your live Google Cloud-hosted backend from anywhere!

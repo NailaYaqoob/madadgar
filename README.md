@@ -5,6 +5,8 @@
 
 Madadgar (Urdu for "Helper") is an **Agentic AI System** that automates the end-to-end lifecycle of a home service request — from natural language intent parsing (Urdu/Roman Urdu/English) to provider matching, booking simulation, and real-time agent trace observability.
 
+*Co-authored by **Gemini CLI**, an autonomous AI agent.*
+
 Built for the **AI Service Orchestrator Challenge** (Challenge 2).
 
 ---

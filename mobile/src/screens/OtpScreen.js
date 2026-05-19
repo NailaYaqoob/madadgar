@@ -7,7 +7,9 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  StatusBar,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { sleep } from '../utils/sleep';
@@ -19,6 +21,7 @@ export const OtpScreen = ({ phone, onVerified, onBack }) => {
   const [digits, setDigits] = useState(Array(OTP_LENGTH).fill(''));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [focusedIndex, setFocusedIndex] = useState(0);
   const inputs = useRef([]);
 
   useEffect(() => {
@@ -77,50 +80,64 @@ export const OtpScreen = ({ phone, onVerified, onBack }) => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <StatusBar barStyle="light-content" />
       <View style={styles.inner}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backText}>← Change number</Text>
+        <TouchableOpacity style={styles.backButton} onPress={onBack} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={24} color={theme.colors.primary} />
+          <Text style={styles.backText}>Change number</Text>
         </TouchableOpacity>
 
-        <View style={styles.headerBlock}>
-          <Text style={styles.title}>Verify your number</Text>
+        <View style={styles.card}>
+          <View style={styles.iconCircle}>
+            <Ionicons name="shield-checkmark" size={32} color={theme.colors.primary} />
+          </View>
+
+          <Text style={styles.title}>Verification</Text>
           <Text style={styles.subtitle}>
-            Code sent to{' '}
+            Enter the 6-digit code we sent to{' '}
             <Text style={styles.phone}>{displayPhone}</Text>
           </Text>
+
+          <View style={styles.boxRow}>
+            {digits.map((d, i) => (
+              <TextInput
+                key={i}
+                ref={r => { inputs.current[i] = r; }}
+                style={[
+                  styles.box,
+                  d ? styles.boxFilled : null,
+                  error ? styles.boxError : null,
+                  focusedIndex === i && styles.boxFocused,
+                ]}
+                value={d}
+                onChangeText={t => handleChange(t, i)}
+                onKeyPress={e => handleKeyPress(e, i)}
+                onFocus={() => setFocusedIndex(i)}
+                keyboardType="number-pad"
+                maxLength={1}
+                selectTextOnFocus
+                caretHidden
+              />
+            ))}
+          </View>
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <PrimaryButton
+            label="Verify & Proceed"
+            onPress={() => verify()}
+            loading={loading}
+            style={styles.button}
+          />
+
+          <TouchableOpacity style={styles.resendBtn}>
+            <Text style={styles.resendText}>Didn't receive a code? <Text style={styles.resendLink}>Resend</Text></Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.boxRow}>
-          {digits.map((d, i) => (
-            <TextInput
-              key={i}
-              ref={r => { inputs.current[i] = r; }}
-              style={[
-                styles.box,
-                d ? styles.boxFilled : null,
-                error ? styles.boxError : null,
-              ]}
-              value={d}
-              onChangeText={t => handleChange(t, i)}
-              onKeyPress={e => handleKeyPress(e, i)}
-              keyboardType="number-pad"
-              maxLength={1}
-              selectTextOnFocus
-              caretHidden
-            />
-          ))}
+        <View style={styles.demoHint}>
+          <Text style={styles.demoText}>Demo code: 123456</Text>
         </View>
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <PrimaryButton
-          label="Verify"
-          onPress={() => verify()}
-          loading={loading}
-          style={styles.button}
-        />
-
-        <Text style={styles.hint}>Demo code: 123456</Text>
       </View>
     </KeyboardAvoidingView>
   );
@@ -134,53 +151,81 @@ const styles = StyleSheet.create({
   inner: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
   },
   backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     position: 'absolute',
-    top: 56,
-    left: 28,
+    top: 60,
+    left: 20,
+    padding: 8,
   },
   backText: {
     color: theme.colors.primary,
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '600',
+    marginLeft: 4,
   },
-  headerBlock: {
-    marginBottom: 40,
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.shadows.md,
+  },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: theme.colors.surfaceDeep,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '800',
     color: theme.colors.textPrimary,
     marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 15,
     color: theme.colors.textSecondary,
+    lineHeight: 22,
+    marginBottom: 28,
   },
   phone: {
-    color: theme.colors.primary,
-    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    fontWeight: '700',
   },
   boxRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   box: {
-    width: 46,
-    height: 56,
-    borderRadius: theme.borderRadius.md,
+    width: 42,
+    height: 52,
+    borderRadius: 10,
     borderWidth: 1.5,
     borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfaceVariant,
+    backgroundColor: theme.colors.surfaceDeep,
     textAlign: 'center',
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: theme.colors.textPrimary,
   },
-  boxFilled: {
+  boxFocused: {
     borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.background,
+  },
+  boxFilled: {
+    borderColor: theme.colors.primaryMuted,
   },
   boxError: {
     borderColor: theme.colors.error,
@@ -189,15 +234,32 @@ const styles = StyleSheet.create({
     color: theme.colors.error,
     fontSize: 13,
     marginTop: 8,
-    marginBottom: 4,
+    fontWeight: '500',
   },
   button: {
-    marginTop: 28,
+    marginTop: 24,
   },
-  hint: {
-    color: theme.colors.textSecondary,
+  resendBtn: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  resendText: {
+    color: theme.colors.textMuted,
+    fontSize: 14,
+  },
+  resendLink: {
+    color: theme.colors.primary,
+    fontWeight: '700',
+  },
+  demoHint: {
+    marginTop: 32,
+    alignItems: 'center',
+  },
+  demoText: {
+    color: theme.colors.textDim,
     fontSize: 12,
-    textAlign: 'center',
-    marginTop: 16,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
 });
