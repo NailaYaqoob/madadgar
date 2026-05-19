@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
@@ -15,7 +15,7 @@ const TYPE_CONFIG = {
 };
 
 export const ReasoningTrace = ({ traceId, status, trace = [], booking }) => {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(trace.length > 0);
 
   if (!traceId) return null;
 

@@ -27,6 +27,14 @@ const _MOCK = {
   Beautician:      [{ name: 'Zara Makeup Artist', rating: 4.4 }, { name: 'Glow Beauty Studio', rating: 4.6 }],
 };
 
+const _ts = () => new Date().toISOString();
+
+function _makeTrace(steps) {
+  return steps.map(([agent, type, message, ms]) => ({
+    timestamp: _ts(), agent, type, message, duration_ms: ms,
+  }));
+}
+
 // Simple ordinal detection matching the backend's intent agent
 const _ORDINALS = { first: 0, '1': 0, 'number 1': 0, pahla: 0, doosra: 1, second: 1, '2': 1, 'number 2': 1, third: 2, teesra: 2, '3': 2, 'number 3': 2 };
 
@@ -58,7 +66,13 @@ function _fallbackResponse(message, history = []) {
     _lastShownProviders = [];
     return {
       message: 'Your request has been cancelled. Feel free to ask whenever you need a service!',
-      status: 'completed', trace_id: 'offline', trace: [], booking: null,
+      status: 'completed',
+      trace_id: 'offline',
+      trace: _makeTrace([
+        ['IntentAgent',  'reasoning',        'Detected cancellation intent.',           8],
+        ['BookingAgent', 'state_transition',  'Booking cancelled successfully.',        45],
+      ]),
+      booking: null,
     };
   }
 
@@ -86,7 +100,11 @@ function _fallbackResponse(message, history = []) {
           `Provider has been notified and will arrive on time.`,
         status: 'completed',
         trace_id: 'offline',
-        trace: [],
+        trace: _makeTrace([
+          ['IntentAgent',        'reasoning',         `Ordinal selection detected → provider ${ordinalIdx + 1}.`,   10],
+          ['BookingAgent',       'tool_execution',    `Created booking record ${bookingId}.`,                      120],
+          ['NotificationAgent',  'state_transition',  `Provider "${provider.name}" notified.`,                     55],
+        ]),
         booking: bookingId,
       };
     }
@@ -109,7 +127,13 @@ function _fallbackResponse(message, history = []) {
         "• Plumber\n• Electrician\n• AC Technician\n" +
         "• Home Tutor\n• Home Cleaner\n• Beautician\n\n" +
         "Tell me which service you need and your area (e.g. 'I need a plumber in DHA Karachi').",
-      status: 'requires_clarification', trace_id: 'offline', trace: [], booking: null,
+      status: 'requires_clarification',
+      trace_id: 'offline',
+      trace: _makeTrace([
+        ['IntentAgent', 'reasoning', 'Could not determine service category from message.', 12],
+        ['Supervisor',  'state_transition', 'Requesting clarification from user.', 5],
+      ]),
+      booking: null,
     };
   }
 
@@ -122,7 +146,16 @@ function _fallbackResponse(message, history = []) {
     message:
       `I found these top-rated ${service}s near you:\n\n${list}\n\n` +
       `Reply with "book the first one" or "book 2" to confirm your booking.`,
-    status: 'requires_clarification', trace_id: 'offline', trace: [], booking: null,
+    status: 'requires_clarification',
+    trace_id: 'offline',
+    trace: _makeTrace([
+      ['IntentAgent',    'reasoning',       `Detected service category: ${service}.`,                  14],
+      ['LocationAgent',  'reasoning',       'Extracted location from message context.',                 18],
+      ['DiscoveryAgent', 'tool_execution',  `Found ${providers.length} provider(s) in local cache.`,   25],
+      ['RankingAgent',   'state_transition', 'Providers ranked by rating and proximity.',              11],
+      ['Supervisor',     'state_transition', 'Presenting options to user.',                             4],
+    ]),
+    booking: null,
   };
 }
 

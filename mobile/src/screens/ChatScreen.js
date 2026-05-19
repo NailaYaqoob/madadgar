@@ -11,6 +11,27 @@ import { ReasoningTrace } from '../components/ReasoningTrace';
 import { ChatService } from '../services/api';
 import { theme } from '../styles/theme';
 
+// On web the Ionicons font sometimes doesn't load — use emoji as safe fallback
+const WIcon = ({ name, size, color, style }) => {
+  if (Platform.OS !== 'web') {
+    return <Ionicons name={name} size={size} color={color} style={style} />;
+  }
+  const emojiMap = {
+    'robot':            '🤖',
+    'robot-outline':    '🤖',
+    'send':             '➤',
+    'ellipsis-vertical':'⋮',
+    'checkmark-done':   '✓',
+  };
+  const emoji = emojiMap[name];
+  if (!emoji) return <Ionicons name={name} size={size} color={color} style={style} />;
+  return (
+    <Text style={[{ fontSize: size - 2, color, lineHeight: size + 2 }, style]}>
+      {emoji}
+    </Text>
+  );
+};
+
 const now = () =>
   new Date().toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' });
 
@@ -40,7 +61,7 @@ const TypingDots = React.memo(function TypingDots() {
   return (
     <View style={dotStyles.row}>
       <View style={dotStyles.avatar}>
-        <Ionicons name="robot-outline" size={16} color={theme.colors.primary} />
+        <WIcon name="robot-outline" size={16} color={theme.colors.primary} />
       </View>
       <View style={dotStyles.bubble}>
         {anims.map((a, i) => (
@@ -188,7 +209,7 @@ export const ChatScreen = ({ userId }) => {
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <View style={styles.headerAvatarWrap}>
           <View style={styles.headerAvatar}>
-            <Ionicons name="robot" size={24} color={theme.colors.primary} />
+            <WIcon name="robot" size={24} color={theme.colors.primary} />
           </View>
           <View style={styles.onlineDot} />
         </View>
@@ -197,7 +218,7 @@ export const ChatScreen = ({ userId }) => {
           <Text style={styles.headerSubtitle}>Always here to help</Text>
         </View>
         <TouchableOpacity style={styles.headerAction}>
-          <Ionicons name="ellipsis-vertical" size={20} color={theme.colors.textSecondary} />
+          <WIcon name="ellipsis-vertical" size={20} color={theme.colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -237,7 +258,7 @@ export const ChatScreen = ({ userId }) => {
             onPress={handleSend}
             disabled={!canSend}
           >
-            <Ionicons
+            <WIcon
               name="send"
               size={18}
               color={canSend ? '#FFFFFF' : theme.colors.textDim}
